@@ -53,12 +53,11 @@ public:
 
     // Menambahkan objek ke dalam array yang sudah ada
     JsonObject addObjectToArray(JsonArray& array) {
-        return array.createNestedObject();
+        return array.add<JsonObject>();
     }
 
-    // Membaca nilai berdasarkan key dari JSON document
-    String read(const char* key) const {
-        return jsonDoc.containsKey(key) ? jsonDoc[key].as<String>() : "Key not found";
+    String read(const char *key) const {
+        return jsonDoc[key].as<String>(); // Directly return the value as String
     }
 
     // Cetak JSON dalam format yang rapi

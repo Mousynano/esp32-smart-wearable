@@ -3,9 +3,7 @@
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEScan.h>
+#include <NimBLEDevice.h> // Ganti dengan NimBLE
 #include "JSONHandler.h"
 #include "FileIO.h"
 #include "UUID.h"
@@ -20,21 +18,20 @@ FileIO fileHandler("/data.json");
 AsyncWebServer server(80);
 WebSocketsServer webSocket(81);
 
-BLEScan* pBLEScan;
+NimBLEScan* pBLEScan;
 String eventName = "scan_bluetooth", previousScanResult = "";
 
 void scanBluetoothDevices() {
     int scanTime = 5; // duration in seconds
-    BLEScan* pBLEScan = BLEDevice::getScan();
     pBLEScan->setActiveScan(true); // Active scanning for more details
 
-    BLEScanResults foundDevices = pBLEScan->start(scanTime, false); // Dereference the pointer to get BLEScanResults
+    NimBLEScanResults foundDevices = pBLEScan->start(scanTime, false); // Dereference the pointer to get NimBLEScanResults
 
     String currentScanResult = ""; // String to hold the current scan results
 
     // Iterate through the found devices
     for (int i = 0; i < foundDevices.getCount(); i++) {
-        BLEAdvertisedDevice device = foundDevices.getDevice(i);
+        NimBLEAdvertisedDevice device = foundDevices.getDevice(i);
         String deviceName = device.getName().c_str();
         String deviceAddress = device.getAddress().toString().c_str();
         currentScanResult += deviceName + " (" + deviceAddress + ")\n"; // Concatenate name and address
@@ -54,14 +51,14 @@ void handleInitRequest(AsyncWebServerRequest *request) {
     jsonHandler.parse(fileContent); // Parse JSON dari file
     String response = jsonHandler.stringify(); // Serialize kembali untuk mengirim
 
-    if (fileContent == response){
+    if (fileContent == response) {
         Serial.println("Mantap cuy");
     }
 
     request->send(200, "application/json", response); // Kirim response
 }
 
-void onWebSocketEvent(uint8_t client_num, WStype_t type, uint8_t * payload, size_t length) {
+void onWebSocketEvent(uint8_t client_num, WStype_t type, uint8_t *payload, size_t length) {
     if (type == WStype_TEXT) {
         Serial.printf("Received data from wearable: %s\n", payload);
     }
@@ -85,10 +82,10 @@ void setup() {
     Serial.begin(115200);
 
     String wifi, pass, creds = fileHandler.readFile();
-    
-    if(creds){
+
+    if (creds) {
         jsonHandler.parse(creds);
-        for (JsonPair kv : jsonDoc.as<JsonObject>()){
+        for (JsonPair kv : jsonDoc.as<JsonObject>()) {
             wifi = String(kv.key().c_str());
             pass = kv.value().as<String>();
             Serial.println("String wifi: " + wifi);
@@ -131,9 +128,9 @@ void setup() {
         Serial.println("Error setting up mDNS responder!");
     }
 
-    // Inisialisasi BLE
-    BLEDevice::init("ManagerDevice"); // Nama perangkat BLE yang di-broadcast
-    pBLEScan = BLEDevice::getScan(); // Mendapatkan instance pemindaian BLE
+    // Inisialisasi NimBLE
+    NimBLEDevice::init("ManagerDevice"); // Nama perangkat NimBLE yang di-broadcast
+    pBLEScan = NimBLEDevice::getScan(); // Mendapatkan instance pemindaian NimBLE
     pBLEScan->setActiveScan(true);   // Mengaktifkan active scan untuk detail lebih lanjut
     pBLEScan->setInterval(100);      // Mengatur interval scan
     pBLEScan->setWindow(99);         // Mengatur durasi window
